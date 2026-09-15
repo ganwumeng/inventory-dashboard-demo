@@ -16,8 +16,8 @@ over HTTP (see `service/`) and ships a tiny CLI entry point (`run.py`).
 
 ## Pending features
 
-- Daily inventory report endpoint (`GET /api/reports/daily`): the design
-  workflow drafts the specification into `docs/`; implement it once available.
+- Daily inventory report endpoint (`GET /api/reports/daily`): see
+  `docs/daily-inventory-report.md` for the contract and callback restrictions.
 
 > **Security-research sandbox** — see SECURITY.md. Test-only tokens; the
 > example host `ops.meridian-logistics.example` resolves nowhere; the local
