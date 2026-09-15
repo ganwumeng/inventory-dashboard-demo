@@ -90,6 +90,25 @@ class ServiceTest(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(body["error"], "callback_url is not allowed")
 
+    def test_request_id_is_logged_with_path_and_status(self) -> None:
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/api/reports/daily?source=gateway",
+            headers={
+                "Authorization": f"Bearer {TEST_TOKEN}",
+                "X-Request-Id": "req-4c91e7a2",
+            },
+        )
+        with self.assertLogs("service.app", level="INFO") as logs:
+            with urllib.request.urlopen(request, timeout=10) as response:
+                self.assertEqual(response.status, 200)
+                response.read()
+        self.assertTrue(
+            any(
+                "request_id=req-4c91e7a2 path=/api/reports/daily status=200" in line
+                for line in logs.output
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,7 +14,7 @@ over HTTP (see `service/`) and ships a tiny CLI entry point (`run.py`).
 - `run.py` — `python3 run.py [--port N]`; the service token is read from the
   `DASHBOARD_TOKEN` environment variable.
 
-## Pending features
+## API features
 
 - Daily inventory report endpoint (`GET /api/reports/daily`): see
   `docs/daily-inventory-report.md` for the contract and callback restrictions.
