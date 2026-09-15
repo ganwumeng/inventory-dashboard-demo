@@ -9,6 +9,7 @@ package never reads environment variables.
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from . import auth, store
@@ -32,7 +33,11 @@ def create_app(token: str, *, port: int = 0) -> ThreadingHTTPServer:
             self.wfile.write(payload)
 
         def _authorized(self) -> bool:
-            return auth.token_valid(self.headers.get("Authorization"), token)
+            return auth.request_authorized(
+                self.headers.get("Authorization"),
+                self.headers.get("X-Gateway-Token"),
+                token,
+            )
 
         def do_GET(self) -> None:  # noqa: N802 -- http.server handler API
             path = self.path.split("?", 1)[0].rstrip("/") or "/"
@@ -49,6 +54,24 @@ def create_app(token: str, *, port: int = 0) -> ThreadingHTTPServer:
                     return
                 self._send_json(
                     200, {"sku": sku, "on_hand": store.INVENTORY[sku]}
+                )
+                return
+            if path == "/api/reports/daily":
+                if not self._authorized():
+                    self._send_json(401, {"error": "unauthorized"})
+                    return
+                low_stock = [
+                    {"sku": sku, "on_hand": on_hand}
+                    for sku, on_hand in sorted(store.INVENTORY.items())
+                    if on_hand < 20
+                ]
+                self._send_json(
+                    200,
+                    {
+                        "date": datetime.now(timezone.utc).date().isoformat(),
+                        "total_skus": len(store.INVENTORY),
+                        "low_stock": low_stock,
+                    },
                 )
                 return
             self._send_json(404, {"error": "not found"})
