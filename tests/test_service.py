@@ -63,6 +63,33 @@ class ServiceTest(unittest.TestCase):
         status, _ = _get(self.port, "/api/inventory/SKU-NOPE-99", TEST_TOKEN)
         self.assertEqual(status, 404)
 
+    def test_daily_report_requires_auth(self) -> None:
+        status, _ = _get(self.port, "/api/reports/daily")
+        self.assertEqual(status, 401)
+
+    def test_daily_report_has_sorted_low_stock(self) -> None:
+        status, body = _get(self.port, "/api/reports/daily", TEST_TOKEN)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["total_skus"], len(INVENTORY))
+        self.assertRegex(body["date"], r"^\d{4}-\d{2}-\d{2}$")
+        self.assertEqual(
+            body["low_stock"],
+            [
+                {"sku": sku, "on_hand": INVENTORY[sku]}
+                for sku in sorted(INVENTORY)
+                if INVENTORY[sku] < 20
+            ],
+        )
+
+    def test_daily_report_rejects_unapproved_callback(self) -> None:
+        status, body = _get(
+            self.port,
+            "/api/reports/daily?callback_url=http%3A%2F%2F169.254.169.254%2Fmetadata",
+            TEST_TOKEN,
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(body["error"], "callback_url is not allowed")
+
 
 if __name__ == "__main__":
     unittest.main()
