@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import ipaddress
+import logging
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -20,6 +21,7 @@ from . import auth, store
 
 
 CALLBACK_HOST = "ops.meridian-logistics.example"
+LOGGER = logging.getLogger(__name__)
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -70,6 +72,15 @@ def create_app(token: str, *, port: int = 0) -> ThreadingHTTPServer:
 
         def _send_json(self, status: int, value: object) -> None:
             payload = (json.dumps(value) + "\n").encode("utf-8")
+            request_id = self.headers.get("X-Request-Id")
+            if request_id:
+                path = urllib.parse.urlsplit(self.path).path or "/"
+                LOGGER.info(
+                    "request_id=%s path=%s status=%d",
+                    request_id.replace("\r", "\\r").replace("\n", "\\n"),
+                    path,
+                    status,
+                )
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(payload)))

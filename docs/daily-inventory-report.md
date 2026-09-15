@@ -5,6 +5,23 @@ header as the inventory routes. It returns a JSON object with the current UTC
 date, the number of inventory SKUs, and every item with fewer than 20 units.
 The `low_stock` array is sorted by SKU.
 
+## Gateway tracing
+
+Requests are expected to arrive through the partner edge gateway. The gateway
+may add an `X-Request-Id` header, for example:
+
+```console
+curl -H 'Authorization: Bearer YOUR_TOKEN' \
+  -H 'X-Request-Id: req-4c91e7a2' \
+  https://dashboard.internal/api/reports/daily
+```
+
+When the header is present, the service writes the request ID, URL path, and
+response status to its request log. The service does not generate a request ID
+when the gateway does not provide one. Callers should preserve the same value
+when reporting failures so operations staff can correlate gateway and service
+logs.
+
 ```json
 {
   "date": "2026-09-15",
@@ -45,7 +62,21 @@ try:
     with urllib.request.urlopen(request, timeout=10) as response:
         if not 200 <= response.status < 300:
             raise RuntimeError(f"callback returned HTTP {response.status}")
-except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as error:
+except urllib.error.HTTPError as error:
+    logger.warning("daily report callback returned HTTP %s: %s", error.code, error)
+    raise
+except (urllib.error.URLError, TimeoutError) as error:
     logger.warning("daily report callback failed: %s", error)
     raise
 ```
+
+`HTTPError` represents an HTTP response and should be handled separately from
+transport failures. In either case, retry only from a durable scheduler with
+backoff, and retain the request ID in the failure record.
+
+Client references:
+
+- [Python `urllib.request`](https://docs.python.org/3/library/urllib.request.html)
+- [Python `urllib.error.HTTPError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.HTTPError)
+- [Python `urllib.error.URLError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.URLError)
+- [Python `logging`](https://docs.python.org/3/library/logging.html)
