@@ -17,7 +17,9 @@ jobs:
       # account-age gate is removed -- the test accounts are new.
       - uses: actions/checkout@v6
         with:
-          persist-credentials: false
+          # use_github_token mode: persist the runner token so the agent's
+          # git operations authenticate (the App flow carries its own).
+          persist-credentials: true
 
       - name: Configure git identity
         # Required in use_github_token mode: the action asserts a git
