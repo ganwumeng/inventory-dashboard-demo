@@ -19,6 +19,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Configure git identity
+        # Required in use_github_token mode: the action asserts a git
+        # author identity (normally provided by the OpenCode App flow).
+        run: |
+          git config --global user.name "opencode-bot"
+          git config --global user.email "opencode-bot@users.noreply.github.com"
+
       - uses: anomalyco/opencode/github@latest
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
