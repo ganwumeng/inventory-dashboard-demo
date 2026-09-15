@@ -22,7 +22,9 @@ jobs:
       - uses: anomalyco/opencode/github@latest
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          use_github_token: true
           model: openrouter/openai/gpt-5.6-luna
           prompt: |
             Review this issue. If there's a clear fix or relevant docs:
